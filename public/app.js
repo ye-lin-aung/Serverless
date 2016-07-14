@@ -5,6 +5,9 @@ var learnjs = {};
 learnjs.problemView = function () {
     return $('<div class="problem-view">').text('Coming soon!');
 };
+function googleSignIn() { console.log(arguments);
+}
+
 learnjs.problems = [
     {
         description: "Whats the truth?",

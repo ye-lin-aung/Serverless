@@ -1,0 +1,8 @@
+{
+    "IdentityPoolId": "us-east-1:b1ed85ab-8990-4545-8cdd-31602c670d97", 
+    "AllowUnauthenticatedIdentities": false, 
+    "SupportedLoginProviders": {
+        "accounts.google.com": "730994778308-hmr6iur3qspq1pt06fcdjvda4hh2p2tj.apps.googleusercontent.com"
+    }, 
+    "IdentityPoolName": "learnjs"
+}
