@@ -30,10 +30,12 @@ learnjs.showView = function (hash) {
     };
     var hashParts = hash.split('-');
     var viewFn = routes[hashParts[0]];
-    learnjs.triggerEvent('removingView',[]);
+    learnjs.triggerEvent('removingView', []);
+   // $('.view-container').empty().append(viewFn(hashParts[1]));
     if (viewFn) {
         $('.view-container').empty().append(viewFn(hashParts[1]));
     }
+
 
 };
 
@@ -69,9 +71,17 @@ learnjs.buildCorrectFlash = function (problemNum) {
 
 
 learnjs.problemView = function (data) {
+
     var problemNumber = parseInt(data, 10);
     var view = $('.templates .problem-view').clone();
     var problemData = learnjs.problems[problemNumber - 1];
+
+    if (problemNumber < learnjs.problems.length) {
+        var buttonItem = learnjs.template('skip-btn'); buttonItem.find('a').attr('href', '#problem-' + (problemNumber + 1)); $('.nav-list').append(buttonItem);
+        view.bind('removingView', function() {
+            buttonItem.remove();
+        });
+    }
     var resultFlash = view.find('.result');
 
     function checkAnswer() {
@@ -84,10 +94,8 @@ learnjs.problemView = function (data) {
 
 
     function checkAnswerClick() {
-        console.log("HERE");
+
         if (checkAnswer()) {
-            // learnjs.flashElement(resultFlash,'Correct');
-            // learnjs.flashElement(learnjs.buildCorrectFlash(data),'Next');
             var correctFlash = learnjs.template('correct-flash');
             correctFlash.find('a').attr('href', '#problem-' + (problemNumber + 1));
             learnjs.flashElement(resultFlash, correctFlash);
@@ -95,13 +103,8 @@ learnjs.problemView = function (data) {
             learnjs.flashElement(resultFlash, 'Incorrect!');
         }
 
-        if (problemNumber < learnjs.problems.length) {
-            var buttonItem = learnjs.template('skip-btn'); buttonItem.find('a').attr('href', '#problem-' + (problemNumber + 1)); $('.nav-list').append(buttonItem);
-            view.bind('removingView', function() {
-                buttonItem.remove();
-            });
-        }
-        
+
+
         return false;
     }
 
