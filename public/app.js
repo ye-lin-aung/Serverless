@@ -212,7 +212,7 @@ learnjs.appOnReady = function () {
 
 learnjs.addProfileLink = function (profile) {
     
-    var link = learnjs.markover('profile-link');
+    var link = learnjs.template('profile-link');
    // link.find('a').cle;
 
     console.log(profile.email);
