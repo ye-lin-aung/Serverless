@@ -1,12 +1,72 @@
 "use strict";
 
-var learnjs = {};
+var learnjs = {
+    poolId: 'us-east-1:1428da81-524a-4584-82e2-749f4da97908'
+};
+;
 
 learnjs.problemView = function () {
     return $('<div class="problem-view">').text('Coming soon!');
 };
-function googleSignIn() { console.log(arguments);
+
+learnjs.profileView = function () {
+    var view = learnjs.template('profile-view');
+    learnjs.identity.done(function (identity) {
+        view.find('.email').text(identity.email);
+    });
+    return view;
+};
+
+
+function refresh() {
+    return gapi.auth2.getAuthInstance().signIn({
+        prompt: 'login'
+    }).then(function (userUpdate) {
+        var creds = AWS.config.credentials;
+        var newToken = userUpdate.getAuthResponse().id_token;
+
+        creds.params.Logins['accounts.google.com'] = newToken;
+        return learnjs.awsRefresh();
+
+    });
 }
+
+learnjs.awsRefresh = function () {
+    var deferred = new $.Deferred();
+    AWS.config.credentials.refresh(function (err) {
+        if (err) {
+            deferred.reject(err);
+        } else {
+            deferred.resolve(AWS.config.credentials.identityId);
+        }
+    });
+    return deferred.promise();
+}
+
+learnjs.identity = new $.Deferred();
+
+function googleSignIn(googleUser) {
+
+    var id_token = googleUser.getAuthResponse().id_token;
+    AWS.config.update({
+        region: 'us-east-1',
+        credentials: new AWS.CognitoIdentityCredentials({
+            IdentityPoolId: learnjs.poolId,
+            Logins: {
+                'accounts.google.com': id_token
+            }
+        })
+    });
+    learnjs.awsRefresh().then(function (id) {
+        learnjs.identity.resolve({
+            id: id,
+            email: googleUser.getBasicProfile().getEmail(),
+            refresh: refresh
+        });
+    });
+
+}
+
 
 learnjs.problems = [
     {
@@ -22,19 +82,20 @@ learnjs.problems = [
 learnjs.helloView = function () {
     return $('<div class="hello-view">').text("Hello");
 };
-learnjs.triggerEvent = function(name,args){
-    $('.view-container>*').trigger(name,args)
+learnjs.triggerEvent = function (name, args) {
+    $('.view-container>*').trigger(name, args)
 };
 learnjs.showView = function (hash) {
     var routes = {
         '#problem': learnjs.problemView,
-        '':learnjs.landingView,
-        '#':learnjs.landingView
+        '': learnjs.landingView,
+        '#': learnjs.landingView,
+        '#profile': learnjs.profileView
     };
     var hashParts = hash.split('-');
     var viewFn = routes[hashParts[0]];
     learnjs.triggerEvent('removingView', []);
-   // $('.view-container').empty().append(viewFn(hashParts[1]));
+    // $('.view-container').empty().append(viewFn(hashParts[1]));
     if (viewFn) {
         $('.view-container').empty().append(viewFn(hashParts[1]));
     }
@@ -80,8 +141,10 @@ learnjs.problemView = function (data) {
     var problemData = learnjs.problems[problemNumber - 1];
 
     if (problemNumber < learnjs.problems.length) {
-        var buttonItem = learnjs.template('skip-btn'); buttonItem.find('a').attr('href', '#problem-' + (problemNumber + 1)); $('.nav-list').append(buttonItem);
-        view.bind('removingView', function() {
+        var buttonItem = learnjs.template('skip-btn');
+        buttonItem.find('a').attr('href', '#problem-' + (problemNumber + 1));
+        $('.nav-list').append(buttonItem);
+        view.bind('removingView', function () {
             buttonItem.remove();
         });
     }
@@ -107,7 +170,6 @@ learnjs.problemView = function (data) {
         }
 
 
-
         return false;
     }
 
@@ -122,6 +184,11 @@ learnjs.template = function (name) {
     return $('.templates .' + name).clone();
 };
 
+learnjs.markover = function (name) {
+    return $('.markup .' + name).clone();
+};
+
+
 
 learnjs.landingView = function () {
     return learnjs.template('landing-view');
@@ -133,9 +200,23 @@ learnjs.applyObject = function (obj, elem) {
         elem.find('[data-name="' + key + '"]').text(obj[key]);
     }
 };
+
+
 learnjs.appOnReady = function () {
     window.onhashchange = function () {
         learnjs.showView(window.location.hash);
     };
     learnjs.showView(window.location.hash);
+    learnjs.identity.done(learnjs.addProfileLink);
 };
+
+learnjs.addProfileLink = function (profile) {
+    
+    var link = learnjs.markover('profile-link');
+   // link.find('a').cle;
+
+    console.log(profile.email);
+    link.find('a').text(profile.email);
+    $('.signin-bar').append(link);
+};
+
