@@ -164,24 +164,26 @@ learnjs.problemView = function (data) {
         return eval(test)
     }
 
-    learnjs.countAnswers = function(problemId) {
-        return learnjs.identity.then(function(identity) {
-            var db = new AWS.DynamoDB.DocumentClient(); var params = {
+    learnjs.countAnswers = function (problemId) {
+        return learnjs.identity.then(function (identity) {
+            var db = new AWS.DynamoDB.DocumentClient();
+            var params = {
                 TableName: 'learnjs',
                 Select: 'COUNT',
                 FilterExpression: 'problemId = :problemId', ExpressionAttributeValues: {':problemId': problemId}
             };
-            return learnjs.sendDbRequest(db.scan(params), function() {
-                return learnjs.countAnswers(problemId); })
-        }); }
-    
+            return learnjs.sendDbRequest(db.scan(params), function () {
+                return learnjs.countAnswers(problemId);
+            })
+        });
+    }
+
 
     learnjs.fetchAnswer = function (problemId) {
         return learnjs.identity.then(function (identity) {
             var db = new AWS.DynamoDB.DocumentClient();
             var item = {
-                TableName: 'learnjs',
-                Key: {
+                TableName: 'learnjs', Key: {
                     userId: identity.id,
                     problemId: problemId
                 }
@@ -189,23 +191,20 @@ learnjs.problemView = function (data) {
             return learnjs.sendDbRequest(db.get(item), function () {
                 return learnjs.fetchAnswer(problemId);
             })
-        })
-    }
+        });
+    };
 
     function checkAnswerClick() {
-
         if (checkAnswer()) {
-            var correctFlash = learnjs.template('correct-flash');
-            correctFlash.find('a').attr('href', '#problem-' + (problemNumber + 1));
-            learnjs.flashElement(resultFlash, correctFlash);
-            learnjs.saveAnswer(problemNumber, answer.val())
+            var flashContent = learnjs.buildCorrectFlash(problemNumber);
+            learnjs.flashElement(resultFlash, flashContent);
+            learnjs.saveAnswer(problemNumber, answer.val());
         } else {
             learnjs.flashElement(resultFlash, 'Incorrect!');
         }
-
-
         return false;
     }
+
 
     view.find('.check-btn').click(checkAnswerClick);
     view.find('.title').text('Problem #' + problemNumber);
@@ -244,47 +243,49 @@ learnjs.appOnReady = function () {
     learnjs.identity.done(learnjs.addProfileLink);
 };
 
+
 learnjs.sendDbRequest = function (req, retry) {
     var promise = new $.Deferred();
     req.on('error', function (error) {
-        if (error.code == "CredentialsError") {
+        if (error.code === "CredentialsError") {
             learnjs.identity.then(function (identity) {
                 return identity.refresh().then(function () {
                     return retry();
                 }, function () {
-                    promise.reject(resp)
+                    promise.reject(resp);
                 });
             });
         } else {
-            promise.reject(error)
+            promise.reject(error);
+
         }
+
     });
     req.on('success', function (resp) {
         promise.resolve(resp.data);
+
     });
     req.send();
-    return promise;
-};
 
+    return promise;
+
+}
 
 learnjs.saveAnswer = function (problemId, answer) {
     return learnjs.identity.then(function (identity) {
         var db = new AWS.DynamoDB.DocumentClient();
         var item = {
-            TableName: 'learnjs',
-            Item: {
+            TableName: 'learnjs', Item: {
                 userId: identity.id,
                 problemId: problemId,
                 answer: answer
             }
         };
-        return learnjs.sendDbRequest(db, put(item), function () {
+        return learnjs.sendDbRequest(db.put(item), function () {
             return learnjs.saveAnswer(problemId, answer);
         })
     });
-
 };
-
 learnjs.addProfileLink = function (profile) {
 
     var link = learnjs.template('profile-link');
