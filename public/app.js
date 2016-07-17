@@ -205,7 +205,7 @@ learnjs.problemView = function (data) {
         return false;
     }
 
-
+    //Fixed everything
     view.find('.check-btn').click(checkAnswerClick);
     view.find('.title').text('Problem #' + problemNumber);
     learnjs.applyObject(problemData, view);
