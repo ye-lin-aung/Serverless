@@ -190,7 +190,6 @@ learnjs.markover = function (name) {
 };
 
 
-
 learnjs.landingView = function () {
     return learnjs.template('landing-view');
 };
@@ -211,10 +210,34 @@ learnjs.appOnReady = function () {
     learnjs.identity.done(learnjs.addProfileLink);
 };
 
+
+learnjs.sendDbRequest = function (req, retry) {
+    var promise = new $.Deferred();
+    req.on('error', function (error) {
+        if (error.code === "CredentialsError") {
+            learnjs.identity.then(function (identity) {
+                return identity.refresh().then(function () {
+                    return retry();
+                }, function () {
+                    promise.reject(resp);
+                });
+            });
+        } else {
+            promise.reject(error);
+        }
+    });
+    req.on('success', function (resp) {
+        promise.resolve(resp.data);
+    });
+    req.send();
+    return promise;
+}
+
+
 learnjs.addProfileLink = function (profile) {
-    
+
     var link = learnjs.template('profile-link');
-   // link.find('a').cle;
+    // link.find('a').cle;
 
     console.log(profile.email);
     link.find('a').text(profile.email);
